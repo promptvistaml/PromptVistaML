@@ -35,31 +35,23 @@ export interface InvoiceData {
 }
 
 function fmtMoney(currency: string, amount: number): string {
+  const safeCurrency = currency === "₹" ? "Rs. " : currency;
   const fixed = amount % 1 === 0 ? amount.toFixed(0) : amount.toFixed(2);
-  return `${currency}${fixed}`;
+  return `${safeCurrency}${fixed}`;
 }
 
 function drawDefaultSignature(doc: jsPDF, x: number, y: number, color: [number, number, number]) {
   doc.setDrawColor(...color);
-  doc.setLineWidth(0.7);
-  // Stylized calligraphic vector signature
-  doc.lines(
-    [
-      [4, -10],
-      [6, 12],
-      [5, -8],
-      [6, 6],
-      [8, -4],
-      [10, 2],
-      [7, -2],
-    ],
-    x,
-    y,
-    [1, 1],
-    "S"
-  );
-  doc.setLineWidth(0.4);
-  doc.line(x - 2, y + 4, x + 46, y + 3);
+  doc.setLineWidth(0.5);
+  // Smooth calligraphic curve matching the live preview SVG (approx 32mm x 12mm)
+  doc.moveTo(x, y + 6);
+  doc.curveTo(x + 2.5, y - 4, x + 6.5, y - 4, x + 5, y + 4);
+  doc.curveTo(x + 4.5, y + 8, x + 10, y - 2, x + 13, y + 2);
+  doc.curveTo(x + 16, y + 6, x + 20, y - 1, x + 25, y + 1.5);
+  doc.curveTo(x + 28, y + 3, x + 31, y, x + 33, y + 0.8);
+  doc.stroke();
+  doc.setLineWidth(0.3);
+  doc.line(x - 1, y + 7.5, x + 34, y + 6.8);
 }
 
 export function generateInvoicePdf(data: InvoiceData) {
@@ -93,7 +85,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     const companyLines = doc.splitTextToSize(data.companyName.toUpperCase(), 65);
     doc.text(companyLines, pageW - margin, 22, { align: "right" });
     if (data.companyTagline) {
-      doc.setFont("courier", "normal");
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(...muted);
       doc.text(data.companyTagline.toUpperCase(), pageW - margin, 22 + companyLines.length * 5, {
@@ -103,7 +95,7 @@ export function generateInvoicePdf(data: InvoiceData) {
 
     // Meta row
     let y = 45;
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(...dark);
     doc.text(`INVOICE NUMBER: ${data.invoiceNumber}`, margin, y);
@@ -122,7 +114,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.text("Bill To:", margin, y);
     doc.text("Payment Method", pageW - margin, y, { align: "right" });
 
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.text(data.clientName || "Client Name", margin, y + 6);
     const clientAddrLines = doc.splitTextToSize(data.clientAddress || "", 80);
@@ -150,7 +142,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.setDrawColor(...dark);
     doc.setLineWidth(0.5);
     doc.rect(margin, tableTop, contentW, rowH);
-    doc.setFont("courier", "bold");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(...dark);
     doc.text("DESCRIPTION", xDesc + 4, tableTop + 7);
@@ -161,7 +153,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     const totalRows = Math.max(data.items.length, 7);
     let currY = tableTop + rowH;
 
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     for (let i = 0; i < totalRows; i++) {
       doc.setDrawColor(160, 152, 140);
@@ -194,7 +186,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.setLineWidth(0.5);
     doc.rect(margin, currY, contentW, rowH);
     doc.line(xSub, currY, xSub, currY + rowH);
-    doc.setFont("courier", "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(`TAX (${data.taxRate}%)`, xSub - 5, currY + 7, { align: "right" });
     doc.text(fmtMoney(data.currency, taxAmount), xSub + colSubW - 4, currY + 7, { align: "right" });
     currY += rowH;
@@ -216,7 +208,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.setTextColor(...dark);
     doc.text("TERM & CONDITION", margin, footY);
 
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
     const termsLines = doc.splitTextToSize(data.terms, 65);
@@ -227,17 +219,17 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.setTextColor(...dark);
     const midX = margin + 74;
     doc.text("FOR ANY QUESTIONS, PLEASE CONTACT", midX, footY);
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.text(data.companyEmail.toUpperCase(), midX, footY + 4);
     doc.text(`OR ${data.companyContact}`, midX, footY + 8);
 
     // Signature
-    const sigX = pageW - margin - 48;
+    const sigX = pageW - margin - 34;
     if (data.signatureDataUrl) {
-      doc.addImage(data.signatureDataUrl, "PNG", sigX, footY - 2, 46, 20);
+      doc.addImage(data.signatureDataUrl, "PNG", sigX, footY, 34, 13);
     } else {
-      drawDefaultSignature(doc, sigX + 2, footY + 12, dark);
+      drawDefaultSignature(doc, sigX, footY + 3, dark);
     }
   } else {
     // Template 2: Modern Bold Red Banner & Pill Table
@@ -249,7 +241,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.rect(0, 0, pageW, 18, "F");
 
     // Meta strip
-    doc.setFont("courier", "bold");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(...red);
     doc.text(`INVOICE TO: ${(data.clientName || "CLIENT").toUpperCase()}`, margin, 26);
@@ -284,7 +276,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.text("Invoice To", margin, y);
     doc.text("Invoice From", pageW - margin, y, { align: "right" });
 
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...dark);
     doc.text(data.clientName || "Client Name", margin, y + 6);
@@ -323,7 +315,7 @@ export function generateInvoicePdf(data: InvoiceData) {
       doc.text(fmtMoney(data.currency, item.qty * item.price), pageW - margin - 8, currY, { align: "right" });
 
       if (item.description) {
-        doc.setFont("courier", "normal");
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(8.2);
         doc.setTextColor(...muted);
         const descLines = doc.splitTextToSize(item.description, 95);
@@ -356,7 +348,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.setTextColor(...red);
     doc.text("Terms & Conditions", margin, footY);
 
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...dark);
     const tLines = doc.splitTextToSize(data.terms, 72);
@@ -367,7 +359,7 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.setFontSize(8.5);
     doc.setTextColor(...red);
     doc.text("Payment & Contact", midX, footY);
-    doc.setFont("courier", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...dark);
     doc.text(data.paymentBank, midX, footY + 5);
@@ -375,11 +367,11 @@ export function generateInvoicePdf(data: InvoiceData) {
     doc.text(data.companyEmail, midX, footY + 14);
 
     // Signature on right
-    const sigX = pageW - margin - 44;
+    const sigX = pageW - margin - 34;
     if (data.signatureDataUrl) {
-      doc.addImage(data.signatureDataUrl, "PNG", sigX, footY - 2, 42, 18);
+      doc.addImage(data.signatureDataUrl, "PNG", sigX, footY, 34, 13);
     } else {
-      drawDefaultSignature(doc, sigX, footY + 10, red);
+      drawDefaultSignature(doc, sigX, footY + 3, red);
     }
   }
 
