@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const siteUrl = "https://promptvistaml.com";
 const title = "Prompt VistaML — Apps, Websites & Business Consulting";
@@ -35,8 +36,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   icons: {
-    icon: "/assets/images/PJqBGXIf1Z2Mf0JgEFIiAcpVu8-8fa774c6.avif",
-    apple: "/assets/images/PJqBGXIf1Z2Mf0JgEFIiAcpVu8-8fa774c6.avif",
+    icon: "/assets/images/logo.avif",
+    apple: "/assets/images/logo.avif",
   },
   openGraph: {
     type: "website",
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
     siteName: "Prompt VistaML",
     images: [
       {
-        url: "/assets/images/PJqBGXIf1Z2Mf0JgEFIiAcpVu8-8fa774c6.avif",
+        url: "/assets/images/logo.avif",
         width: 1200,
         height: 630,
         alt: "Prompt VistaML — Apps, Websites & Business Consulting",
@@ -58,7 +59,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: ["/assets/images/PJqBGXIf1Z2Mf0JgEFIiAcpVu8-8fa774c6.avif"],
+    images: ["/assets/images/logo.avif"],
     creator: "@promptvistaml",
   },
   robots: {
@@ -82,7 +83,7 @@ const jsonLd = {
       "@id": `${siteUrl}/#organization`,
       name: "Prompt VistaML",
       url: siteUrl,
-      logo: `${siteUrl}/assets/images/PJqBGXIf1Z2Mf0JgEFIiAcpVu8-8fa774c6.avif`,
+      logo: `${siteUrl}/assets/images/logo.avif`,
       email: "promptvistaml@gmail.com",
       sameAs: [
         "https://www.linkedin.com/company/promptvistaml/",
@@ -114,6 +115,35 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+          rel="preload"
+          as="image"
+          href="/assets/images/complete_logo.avif"
+        />
+        <link
+          rel="preload"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+          href="/assets/fonts/ea8DadQwV_r_Rv3-7zZMCGhQgVr1SlCpNP3VpQ_a-be817f9e.woff2"
+        />
+        <link
+          rel="preload"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+          href="/assets/fonts/or3yQ6H-1_WfwkMZI_qYPLs1a-t7PU0AbeEPKJ5W7ihaO_CS-851d9f34.woff2"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(sessionStorage.getItem("pv_loaded")==="1"){document.documentElement.setAttribute("data-pv-loaded","1")}}catch(e){}`,
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}html[data-pv-loaded="1"] #pv-loading-screen{display:none!important;}`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -179,7 +209,10 @@ export default function RootLayout({
           href="/assets/js/augiA20Il.CPvsRX_6-e333d7a6.js"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <LoadingScreen />
+        {children}
+      </body>
     </html>
   );
 }
